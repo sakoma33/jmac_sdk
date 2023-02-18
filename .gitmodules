@@ -1,0 +1,3 @@
+[submodule "python/mjx_server_client"]
+	path = python/mjx_server_client
+	url = https://github.com/KateSawada/mjx_server_client.git

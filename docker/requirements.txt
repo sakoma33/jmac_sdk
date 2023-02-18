@@ -1,0 +1,2 @@
+mjx @ git+https://github.com/KateSawada/mjx-server-client.git
+tqdm
