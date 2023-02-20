@@ -1,0 +1,698 @@
+{
+    "who": 1,
+    "publicObservation": {
+        "playerIds": [
+            "player_2",
+            "player_0",
+            "player_3",
+            "player_1"
+        ],
+        "initScore": {
+            "round": 11,
+            "honba": 11,
+            "tens": [
+                25000,
+                25000,
+                25000,
+                25000
+            ]
+        },
+        "doraIndicators": [
+            14
+        ],
+        "events": [
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "who": 3,
+                "tile": 7
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 112
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "who": 1,
+                "tile": 43
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 134
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 87
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 102
+            },
+            {
+                "type": "EVENT_TYPE_CHI",
+                "who": 1,
+                "open": 62663
+            },
+            {
+                "who": 1,
+                "tile": 81
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 1
+            },
+            {
+                "type": "EVENT_TYPE_CHI",
+                "who": 3,
+                "open": 399
+            },
+            {
+                "who": 3,
+                "tile": 126
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 94
+            },
+            {
+                "type": "EVENT_TYPE_CHI",
+                "who": 1,
+                "open": 56535
+            },
+            {
+                "who": 1,
+                "tile": 116
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 8
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 13
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "tile": 111
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 30
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 34
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 16
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {},
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "who": 1,
+                "tile": 88
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 35
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 121
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 49
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 100
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 78
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 64
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 2
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 23
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 52
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 22
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 82
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 104
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 40
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 132
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "tile": 28
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 3
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 107
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 67
+            },
+            {
+                "type": "EVENT_TYPE_CHI",
+                "open": 41063
+            },
+            {
+                "tile": 17
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 72
+            },
+            {
+                "type": "EVENT_TYPE_PON",
+                "who": 3,
+                "open": 27754
+            },
+            {
+                "who": 3,
+                "tile": 53
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 98
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 92
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 113
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 108
+            },
+            {
+                "type": "EVENT_TYPE_PON",
+                "open": 41579
+            },
+            {
+                "tile": 117
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 99
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 5
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 118
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 54
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 25
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 125
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 6
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 83
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 41
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 70
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 33
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 84
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 27
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 42
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 76
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 103
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 32
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 39
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 10
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 135
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 89
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 21
+            },
+            {
+                "type": "EVENT_TYPE_CHI",
+                "who": 3,
+                "open": 13631
+            },
+            {
+                "who": 3,
+                "tile": 80
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 44
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "who": 1,
+                "tile": 61
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "who": 2,
+                "tile": 18
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 47
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 106
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 1
+            },
+            {
+                "who": 1,
+                "tile": 36
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 2
+            },
+            {
+                "type": "EVENT_TYPE_TSUMOGIRI",
+                "who": 2,
+                "tile": 46
+            },
+            {
+                "type": "EVENT_TYPE_DRAW",
+                "who": 3
+            },
+            {
+                "who": 3,
+                "tile": 15
+            },
+            {
+                "type": "EVENT_TYPE_DRAW"
+            },
+            {
+                "tile": 93
+            },
+            {
+                "type": "EVENT_TYPE_EXHAUSTIVE_DRAW_NORMAL"
+            }
+        ]
+    },
+    "privateObservation": {
+        "who": 1,
+        "initHand": {
+            "closedTiles": [
+                3,
+                116,
+                105,
+                72,
+                97,
+                30,
+                100,
+                23,
+                90,
+                81,
+                92,
+                96,
+                45
+            ]
+        },
+        "drawHistory": [
+            43,
+            104,
+            88,
+            27,
+            99,
+            36,
+            25,
+            41,
+            12,
+            50,
+            32,
+            58,
+            89,
+            133,
+            9,
+            61,
+            62
+        ],
+        "currHand": {
+            "closedTiles": [
+                9,
+                12,
+                45,
+                50,
+                58,
+                62,
+                133
+            ],
+            "opens": [
+                62663,
+                56535
+            ]
+        }
+    },
+    "roundTerminal": {
+        "finalScore": {
+            "round": 11,
+            "honba": 11,
+            "tens": [
+                25000,
+                25000,
+                25000,
+                25000
+            ]
+        },
+        "noWinner": {
+            "tenChanges": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "isGameOver": true
+    },
+    "legalActions": [
+        {
+            "type": "ACTION_TYPE_DUMMY",
+            "who": 1
+        }
+    ]
+}
