@@ -65,10 +65,28 @@ class MyCustomNamespace(socketio.Namespace):
     def on_disconnect(self, sid):
         print_log('disconnect')
 
+class SocketIOServer:
+    
+    def __init__(self, host, port, path):
+        self.host = host 
+        self.port = port
+        self.path = path
+        self.sio = socketio.Server(cors_allowed_origins='*') # CORSのエラーを無視する設定
+
+    
+    def start(self, roomId):
+        self.sio.register_namespace(MyCustomNamespace(self.path)) # 名前空間を設定
+        app = socketio.WSGIApp(self.sio) # wsgiサーバーミドルウェア生成
+        self.sio.start_background_task(self.actively_send_json, roomId) # バックグラウンドタスクの登録 
+        eventlet.wsgi.server(eventlet.listen((self.host, self.port)), app) # wsgiサーバー起動
+
+    # 能動的にjsonを送信する
+    def actively_send_json(self, roomId):
+        while(True):
+            self.sio.sleep(3)
+            print_log('emit json actively in {}'.format(roomId))
+            self.sio.emit('receive_content', content, room="123", namespace='/test')
     
 if __name__ == '__main__':
-    
-    sio = socketio.Server(cors_allowed_origins='*') # CORSのエラーを無視する設定
-    sio.register_namespace(MyCustomNamespace('/test')) # 名前空間を設定
-    app = socketio.WSGIApp(sio) # wsgiサーバーミドルウェア生成
-    eventlet.wsgi.server(eventlet.listen(("localhost", 5000)), app) # wsgiサーバー起動
+    sio_server = SocketIOServer('localhost', 5000, '/test') # SocketIOClientクラスをインスタンス化
+    sio_server.start("123") # サーバーを起動する（引数はjsonを送信するルームID）
