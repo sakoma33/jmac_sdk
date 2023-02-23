@@ -12,7 +12,7 @@ def print_log(message):
     print('[{}] {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
 
 # 名前空間を設定するクラス
-class MyCustomNamespace(socketio.ClientNamespace): 
+class MyCustomNamespace(socketio.ClientNamespace):
     def on_connect(self):
         print_log('connect')
 
@@ -34,20 +34,20 @@ class MyCustomNamespace(socketio.ClientNamespace):
 
 
 class SocketIOClient:
-    
+
     def __init__(self, host, path, roomId):
-        self.host = host 
+        self.host = host
         self.path = path
         self.sio = socketio.Client()
         self.roomId = roomId
-    
+
     def connect(self):
         self.sio.register_namespace(MyCustomNamespace(self.path)) # 名前空間を設定
         self.sio.connect(self.host) # サーバーに接続
         self.sio.emit('enter_room', self.roomId, namespace = self.path) # ルームIDを指定して入室
         self.sio.start_background_task(self.my_background_task, 123) # バックグラウンドタスクの登録 (123は引数の書き方の参考のため、処理には使っていない)
         self.sio.wait() # イベントが待ち
-        
+
     def my_background_task(self, my_argument): # ここにバックグランド処理のコードを書く
         while True:
             input_data = input("send data:") # ターミナルから入力された文字を取得
