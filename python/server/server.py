@@ -2,8 +2,11 @@ import eventlet
 import socketio
 from datetime import datetime
 import json
+import random
 
-json_open = open('test.json', 'r')
+import mjx
+
+json_open = open('samples/test.json', 'r')
 content = json.load(json_open)
 
 # 時間付きでの出力
@@ -13,12 +16,45 @@ def print_log(message):
 # ルームごとに接続されているクライアントのリスト
 clients = {}
 
+# ルームごとの卓
+envs = {}
+
+player_names_to_idx ={
+    "player_0": 0,
+    "player_1": 1,
+    "player_2": 2,
+    "player_3": 3,
+}
+
 '''
 ルームごとにjsonを送る: self.emit('response', msg, room=roomId)
 
 特定のクライアントにjsonを送る: self.emit('response', msg, room=clients[roomId][0])
 (roomにクライアントのsidを指定する.)
 '''
+
+def play(roomId, server):
+    """
+    Args:
+        roomId: int
+        server: SocketIOServer
+    """
+    # プレイヤーの位置を決める (ランダム)
+    players = random.sample(cliets[roomId], len(cliets[roomId]))
+
+    # 卓の初期化
+    env_ = envs[roomId]
+    obs_dict = env_.reset()
+
+    while not env.done():
+        actions = {}
+        for player_id, obs in obs_dict.items():
+            sid = players[player_names_to_idx[player_id]]
+            server.sio.emit('receive_content', obs_dict[player_id].to_proto(), room=sid, namespace='/test')
+            actions[player_id] = None  # TODO: ここに `sid` のクライアンドからの行動結果が入る`
+            obs_dict = env.step(actions)
+
+    # 対局終了時にログを保存
 
 # 名前空間を設定するクラス
 class MyCustomNamespace(socketio.Namespace):
@@ -34,6 +70,10 @@ class MyCustomNamespace(socketio.Namespace):
         if roomId not in clients:
             clients[roomId] = []
         clients[roomId].append(sid)
+        # 4人入ったら対局開始
+        if (len(clients[roomId]) == 4):
+            env[roomId] = mjx.MjxEnv()
+
         print_log('enter room: {}'.format(roomId))
 
     # 送信してきたクライアントだけにメッセージを送る関数
