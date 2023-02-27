@@ -112,7 +112,7 @@ class ConvertLog:
 					
 					elif event["type"]=="EVENT_TYPE_ADDED_KAN":
 						open = event["open"]
-						mask_from = open%3
+						mask_from = open%4
 						pon_unused_offset = ((0b0000000001100000 & open)>>5)%3
 						pon_base_and_stolen = (0b1111111000000000 & open)>>9
 						pon_base = (pon_base_and_stolen//3)*4
@@ -127,7 +127,7 @@ class ConvertLog:
 
 					elif event["type"]=="EVENT_TYPE_OPEN_KAN":
 						open = event["open"]
-						mask_from = open%3
+						mask_from = open%4
 						kan_tile = open>>8
 						open_tile = list(range((kan_tile//4)*4,(kan_tile//4)*4+4))
 						stolen_tile = open_tile.pop(kan_tile%4)
@@ -135,10 +135,11 @@ class ConvertLog:
 						insert_pos = 3-mask_from if mask_from>=2 else 3
 						open_tile.insert(insert_pos,'m'+str(self.convert_id(stolen_tile)))
 						log[4+who*3+1].append(''.join(open_tile))
+						log[4+who*3+2].append(0)
 				
 				event_count+=1						
 
 		self.logs["log"].append(log)
 	
 	def get_url(self):
-		return self.BASE_URL+json.dumps(self.logs)
+		return self.BASE_URL+json.dumps(self.logs, separators=(',', ':'))
