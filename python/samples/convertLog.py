@@ -15,6 +15,8 @@ class ConvertLog:
 		for i,obs in enumerate(obs_dict.values()):
 			obs=json.loads(obs.to_json())
 			if i == 0:
+				self.logs["name"] = obs["publicObservation"]["playerIds"]
+				
 				if "round" in obs["publicObservation"]["initScore"].keys():
 					log[0][0] = obs["publicObservation"]["initScore"]["round"]
 
@@ -24,20 +26,22 @@ class ConvertLog:
 				if "riichi" in obs["publicObservation"]["initScore"].keys():
 					log[0][2] = obs["publicObservation"]["initScore"]["riichi"]
 
-				log[1] = obs["publicObservation"]["playerIds"]
+				log[1] = obs["publicObservation"]["initScore"]["tens"]
 
 				for dora in obs["publicObservation"]["doraIndicators"]:
 					log[2].append(self.convert_id(dora))
 
 				if "noWinner" in obs["roundTerminal"].keys():
-					log.append(["流局",obs["roundTerminal"]["noWinner"]["tenChanges"]])
+					log.append(["",obs["roundTerminal"]["noWinner"]["tenChanges"]])
 				else:
 					#todo:包の処理
 					for win in obs["roundTerminal"]["wins"]:
 						if "uraDoraIndicators" in win.keys():
 							log[3] = win["uraDoraIndicators"]
-						log.append(["和了",win["tenChanges"]])
-						log.append([win["who"],win["fromWho"],win["who"],str(win["ten"])+"点"])
+						log.append(["",win["tenChanges"]])
+						who_win = win["who"] if "who" in win.keys() else 0
+						from_who_win = win["fromWho"] if "fromWho" in win.keys() else 0
+						log.append([who_win,from_who_win,who_win,str(win["ten"])])
 			who=obs["who"] if "who" in obs.keys() else 0
 			log[4+who*3] = [self.convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
 			tumo_count=0
@@ -47,30 +51,32 @@ class ConvertLog:
 				who_event = event["who"] if "who" in event.keys() else 0
 				if who == who_event:
 					if not "type" in event.keys():
-						log[4+who*3+2].append(self.convert_id(event["tile"]))
+						tile = event["tile"] if "tile" in event.keys() else 0
+						log[4+who*3+2].append(self.convert_id(tile))
 
 					elif event["type"] == "EVENT_TYPE_TSUMOGIRI":
 						log[4+who*3+2].append(60)
 
 					elif event["type"] == "EVENT_TYPE_DRAW":
-						log[4+who*3+1].append(obs["privateObservation"]["drawHistory"][tumo_count])
+						log[4+who*3+1].append(self.convert_id(obs["privateObservation"]["drawHistory"][tumo_count]))
 						tumo_count += 1
 
 					elif event["type"] == "EVENT_TYPE_RIICHI":
 						event_count+=1
 						next_event=obs["publicObservation"]["events"][event_count]
-						log[4+who*3+2].append('r'+str(self.convert_id(next_event["tile"])))
+						tile = next_event["tile"] if "tile" in next_event.keys() else 0
+						log[4+who*3+2].append('r'+str(self.convert_id(tile)))
 
 
 					elif event["type"] == "EVENT_TYPE_CHI":
 						open = event["open"]
-						chi_offset = [((0b0000000000011000 & open)>>3)%3,
-		       						  ((0b0000000001100000 & open)>>5)%3,
-									  ((0b0000000110000000 & open)>>7)%3,
+						chi_offset = [((0b0000000000011000 & open)>>3)%4,
+		       						  ((0b0000000001100000 & open)>>5)%4,
+									  ((0b0000000110000000 & open)>>7)%4,
 		       						 ]
 						chi_base_and_stolen = (0b1111110000000000 & open)>>10
 						stolen = chi_base_and_stolen%3
-						chi_base = ((chi_base_and_stolen//3)%9)*4+((chi_base_and_stolen//3)//7)*72
+						chi_base = ((chi_base_and_stolen//3)%7)*4+((chi_base_and_stolen//3)//7)*36
 						open_tile = [chi_base+stolen*4+chi_offset[stolen],
 		   							 min(chi_base+((stolen+1)%3)*4+chi_offset[((stolen+1)%3)],chi_base+((stolen+2)%3)*4+chi_offset[((stolen+2)%3)]),
 									 max(chi_base+((stolen+1)%3)*4+chi_offset[((stolen+1)%3)],chi_base+((stolen+2)%3)*4+chi_offset[((stolen+2)%3)])
@@ -79,7 +85,7 @@ class ConvertLog:
 
 					elif event["type"] == "EVENT_TYPE_PON":
 						open = event["open"]
-						mask_from = open%3
+						mask_from = open%4
 						pon_unused_offset = ((0b0000000001100000 & open)>>5)%3
 						pon_base_and_stolen = (0b1111111000000000 & open)>>9
 						pon_base = (pon_base_and_stolen//3)*4
@@ -92,7 +98,7 @@ class ConvertLog:
 						log[4+who*3+1].append(''.join(open_tile))
 
 					elif event["type"]=="EVENT_TYPE_CLOSED_KAN":
-						open = event["open"]
+						open = event["open"] if "open" in event.keys() else 0
 						kan_tile = open>>8
 						# aを置く位置よく分からん（違うとバグる）
 						# 赤の位置も確認が必要
