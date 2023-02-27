@@ -2,7 +2,6 @@ import mjx
 import random
 from typing import List
 from tqdm import tqdm
-from json import loads
 from convertLog import ConvertLog
 
 class RandomAgent(mjx.Agent):
