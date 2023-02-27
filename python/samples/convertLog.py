@@ -13,15 +13,21 @@ class ConvertLog:
 		log = [[0,0,0],[0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 		for i,obs in enumerate(obs_dict.values()):
 			if i == 0:
+
 				if "round" in obs["publicObservation"]["initScore"].keys():
 					log[0][0] = obs["publicObservation"]["initScore"]["round"]
+
 				if "honba" in obs["publicObservation"]["initScore"].keys():
 					log[0][1] = obs["publicObservation"]["initScore"]["honba"]
+
 				if "riichi" in obs["publicObservation"]["initScore"].keys():
 					log[0][2] = obs["publicObservation"]["initScore"]["riichi"]
+
 				log[1] = obs["publicObservation"]["playerIds"]
+
 				for dora in obs["publicObservation"]["doraIndicators"]:
 					log[2].append(self.convert_id(dora))
+
 				if "noWinner" in obs["roundTerminal"].keys():
 					log.append(["流局",obs["roundTerminal"]["noWinner"]["tenChanges"]])
 				else:
@@ -35,20 +41,23 @@ class ConvertLog:
 			log[4+who*3] = [self.convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
 			count=0
 			for event in obs["publicObservation"]["events"]:
-				who_event=event["who"] if "who" in event.keys() else 0
-				if who==who_event:
+				who_event = event["who"] if "who" in event.keys() else 0
+				if who == who_event:
 					if not "type" in event.keys():
 						log[4+who*3+2].append(self.convert_id(event["tile"]))
+
 					elif event["type"] == "EVENT_TYPE_TSUMOGIRI":
 						log[4+who*3+2].append(60)
+
 					elif event["type"] == "EVENT_TYPE_DRAW":
 						log[4+who*3+1].append(obs["privateObservation"]["events"][count])
 						count += 1
+
 					elif event["type"] == "EVENT_TYPE_CHI":
-						open=event["open"]
-						chi_offset = [(0b0000000000011000 & open)>>3,
-		       						  (0b0000000001100000 & open)>>5,
-									  (0b0000000110000000 & open)>>7,
+						open = event["open"]
+						chi_offset = [((0b0000000000011000 & open)>>3)%3,
+		       						  ((0b0000000001100000 & open)>>5)%3,
+									  ((0b0000000110000000 & open)>>7)%3,
 		       						 ]
 						chi_base_and_stolen = (0b1111110000000000 & open)>>10
 						stolen = chi_base_and_stolen%3
@@ -58,10 +67,21 @@ class ConvertLog:
 									 max(chi_base+((stolen+1)%3)*4+chi_offset[((stolen+1)%3)],chi_base+((stolen+2)%3)*4+chi_offset[((stolen+2)%3)])
 									]
 						log[4+who*3+1].append('c'+ str(self.convert_id(open_tile[0])) + str(self.convert_id(open_tile[1])) + str(self.convert_id(open_tile[2])))
-						
 
-			# log[4+who*3+1]
-			# log[4+who*3+2]
+					elif event["type"] == "EVENT_TYPE_PON":
+						open = event["open"]
+						mask_from = open%3
+						pon_unused_offset = ((0b0000000001100000 & open)>>5)%3
+						pon_base_and_stolen = (0b1111111000000000 & open)>>9
+						pon_base = (pon_base_and_stolen//3)*4
+						stolen = pon_base_and_stolen%3
+						open_tile = list(range(pon_base,pon_base+4))
+						open_tile.pop(pon_unused_offset)
+						stolen_tile = open_tile.pop(stolen)
+						open_tile = [str(self.convert_id(id)) for id in open_tile]
+						open_tile.insert(3-mask_from,'p'+str(self.convert_id(stolen_tile)))
+						log[4+who*3+1].append(''.join(open_tile))
+
 			
 		self.logs["log"].append(log)
 	
