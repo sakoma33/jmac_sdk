@@ -13,7 +13,6 @@ class ConvertLog:
 		log = [[0,0,0],[0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 		for i,obs in enumerate(obs_dict.values()):
 			if i == 0:
-
 				if "round" in obs["publicObservation"]["initScore"].keys():
 					log[0][0] = obs["publicObservation"]["initScore"]["round"]
 
@@ -37,7 +36,7 @@ class ConvertLog:
 							log[3] = win["uraDoraIndicators"]
 						log.append(["和了",win["tenChanges"]])
 						log.append([win["who"],win["fromWho"],win["who"],str(win["ten"])+"点"])
-			who=obs["who"]
+			who=obs["who"] if "who" in obs.keys() else 0
 			log[4+who*3] = [self.convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
 			count=0
 			for event in obs["publicObservation"]["events"]:
@@ -80,6 +79,34 @@ class ConvertLog:
 						stolen_tile = open_tile.pop(stolen)
 						open_tile = [str(self.convert_id(id)) for id in open_tile]
 						open_tile.insert(3-mask_from,'p'+str(self.convert_id(stolen_tile)))
+						log[4+who*3+1].append(''.join(open_tile))
+
+					elif event["type"]=="EVENT_TYPE_CLOSED_KAN":
+						open = event["open"]
+						kan_tile = open>>8
+						# aを置く位置よく分からん（違うとバグる）
+						# 赤の位置も確認が必要
+						open_tile=[str(self.convert_id((kan_tile//4)*4+1)),
+		 						   str(self.convert_id((kan_tile//4)*4)),
+								   str(self.convert_id((kan_tile//4)*4+2)),
+								   'a',
+								   str(self.convert_id((kan_tile//4)*4+3))
+								  ]
+						log[4+who*3+2].append(''.join(open_tile))
+					
+					elif event["type"]=="EVENT_TYPE_ADDED_KAN":
+						open = event["open"]
+						mask_from = open%3
+						pon_unused_offset = ((0b0000000001100000 & open)>>5)%3
+						pon_base_and_stolen = (0b1111111000000000 & open)>>9
+						pon_base = (pon_base_and_stolen//3)*4
+						stolen = pon_base_and_stolen%3
+						open_tile = list(range(pon_base,pon_base+4))
+						added_tile=open_tile.pop(pon_unused_offset)
+						stolen_tile = open_tile.pop(stolen)
+						open_tile.append(added_tile)
+						open_tile = [str(self.convert_id(id)) for id in open_tile]
+						open_tile.insert(3-mask_from,'k'+str(self.convert_id(stolen_tile)))
 						log[4+who*3+1].append(''.join(open_tile))
 
 			
