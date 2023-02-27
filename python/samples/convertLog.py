@@ -4,13 +4,8 @@ class ConvertLog:
 	def __init__(self):
 		self.logs = { "title":["",""], "name":["","","",""], "rule":{"disp":"","aka":1}, "log":[]}
 
-	def convert_id(self,id):
-		if id in [16, 52, 88]:
-			return 50+id//36+1
-		else:
-			return (id//36+1)*10+(id%36)//4+1
-
 	def add_log(self,obs_dict):
+		convert_id = lambda id: 50+id//36+1 if id in [16, 52, 88] else (id//36+1)*10+(id%36)//4+1
 		log = [[0,0,0],[0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 		for i,obs in enumerate(obs_dict.values()):
 			obs=json.loads(obs.to_json())
@@ -29,7 +24,7 @@ class ConvertLog:
 				log[1] = obs["publicObservation"]["initScore"]["tens"]
 
 				for dora in obs["publicObservation"]["doraIndicators"]:
-					log[2].append(self.convert_id(dora))
+					log[2].append(convert_id(dora))
 
 				if "noWinner" in obs["roundTerminal"].keys():
 					log.append(["",obs["roundTerminal"]["noWinner"]["tenChanges"]])
@@ -43,7 +38,7 @@ class ConvertLog:
 						from_who_win = win["fromWho"] if "fromWho" in win.keys() else 0
 						log.append([who_win,from_who_win,who_win,str(win["ten"])])
 			who=obs["who"] if "who" in obs.keys() else 0
-			log[4+who*3] = [self.convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
+			log[4+who*3] = [convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
 			tumo_count=0
 			event_count=0
 			while event_count<len(obs["publicObservation"]["events"]):
@@ -52,20 +47,20 @@ class ConvertLog:
 				if who == who_event:
 					if not "type" in event.keys():
 						tile = event["tile"] if "tile" in event.keys() else 0
-						log[4+who*3+2].append(self.convert_id(tile))
+						log[4+who*3+2].append(convert_id(tile))
 
 					elif event["type"] == "EVENT_TYPE_TSUMOGIRI":
 						log[4+who*3+2].append(60)
 
 					elif event["type"] == "EVENT_TYPE_DRAW":
-						log[4+who*3+1].append(self.convert_id(obs["privateObservation"]["drawHistory"][tumo_count]))
+						log[4+who*3+1].append(convert_id(obs["privateObservation"]["drawHistory"][tumo_count]))
 						tumo_count += 1
 
 					elif event["type"] == "EVENT_TYPE_RIICHI":
 						event_count+=1
 						next_event=obs["publicObservation"]["events"][event_count]
 						tile = next_event["tile"] if "tile" in next_event.keys() else 0
-						log[4+who*3+2].append('r'+str(self.convert_id(tile)))
+						log[4+who*3+2].append('r'+str(convert_id(tile)))
 
 
 					elif event["type"] == "EVENT_TYPE_CHI":
@@ -81,7 +76,7 @@ class ConvertLog:
 		   							 min(chi_base+((stolen+1)%3)*4+chi_offset[((stolen+1)%3)],chi_base+((stolen+2)%3)*4+chi_offset[((stolen+2)%3)]),
 									 max(chi_base+((stolen+1)%3)*4+chi_offset[((stolen+1)%3)],chi_base+((stolen+2)%3)*4+chi_offset[((stolen+2)%3)])
 									]
-						log[4+who*3+1].append('c'+ str(self.convert_id(open_tile[0])) + str(self.convert_id(open_tile[1])) + str(self.convert_id(open_tile[2])))
+						log[4+who*3+1].append('c'+ str(convert_id(open_tile[0])) + str(convert_id(open_tile[1])) + str(convert_id(open_tile[2])))
 
 					elif event["type"] == "EVENT_TYPE_PON":
 						open = event["open"]
@@ -93,8 +88,8 @@ class ConvertLog:
 						open_tile = list(range(pon_base,pon_base+4))
 						open_tile.pop(pon_unused_offset)
 						stolen_tile = open_tile.pop(stolen)
-						open_tile = [str(self.convert_id(id)) for id in open_tile]
-						open_tile.insert(3-mask_from,'p'+str(self.convert_id(stolen_tile)))
+						open_tile = [str(convert_id(id)) for id in open_tile]
+						open_tile.insert(3-mask_from,'p'+str(convert_id(stolen_tile)))
 						log[4+who*3+1].append(''.join(open_tile))
 
 					elif event["type"]=="EVENT_TYPE_CLOSED_KAN":
@@ -102,11 +97,11 @@ class ConvertLog:
 						kan_tile = open>>8
 						# aを置く位置よく分からん（違うとバグる）
 						# 赤の位置も確認が必要
-						open_tile=[str(self.convert_id((kan_tile//4)*4+1)),
-		 						   str(self.convert_id((kan_tile//4)*4)),
-								   str(self.convert_id((kan_tile//4)*4+2)),
+						open_tile=[str(convert_id((kan_tile//4)*4+1)),
+		 						   str(convert_id((kan_tile//4)*4)),
+								   str(convert_id((kan_tile//4)*4+2)),
 								   'a',
-								   str(self.convert_id((kan_tile//4)*4+3))
+								   str(convert_id((kan_tile//4)*4+3))
 								  ]
 						log[4+who*3+2].append(''.join(open_tile))
 					
@@ -121,8 +116,8 @@ class ConvertLog:
 						added_tile=open_tile.pop(pon_unused_offset)
 						stolen_tile = open_tile.pop(stolen)
 						open_tile.append(added_tile)
-						open_tile = [str(self.convert_id(id)) for id in open_tile]
-						open_tile.insert(3-mask_from,'k'+str(self.convert_id(stolen_tile)))
+						open_tile = [str(convert_id(id)) for id in open_tile]
+						open_tile.insert(3-mask_from,'k'+str(convert_id(stolen_tile)))
 						log[4+who*3+2].append(''.join(open_tile))
 
 					elif event["type"]=="EVENT_TYPE_OPEN_KAN":
@@ -131,9 +126,9 @@ class ConvertLog:
 						kan_tile = open>>8
 						open_tile = list(range((kan_tile//4)*4,(kan_tile//4)*4+4))
 						stolen_tile = open_tile.pop(kan_tile%4)
-						open_tile = [str(self.convert_id(id)) for id in open_tile]
+						open_tile = [str(convert_id(id)) for id in open_tile]
 						insert_pos = 3-mask_from if mask_from>=2 else 3
-						open_tile.insert(insert_pos,'m'+str(self.convert_id(stolen_tile)))
+						open_tile.insert(insert_pos,'m'+str(convert_id(stolen_tile)))
 						log[4+who*3+1].append(''.join(open_tile))
 						log[4+who*3+2].append(0)
 				
