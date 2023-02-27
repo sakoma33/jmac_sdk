@@ -1,3 +1,4 @@
+import json
 class ConvertLog:
 	BASE_URL = "https://tenhou.net/5/#json="
 	def __init__(self):
@@ -12,6 +13,7 @@ class ConvertLog:
 	def add_log(self,obs_dict):
 		log = [[0,0,0],[0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 		for i,obs in enumerate(obs_dict.values()):
+			obs=json.loads(obs.to_json())
 			if i == 0:
 				if "round" in obs["publicObservation"]["initScore"].keys():
 					log[0][0] = obs["publicObservation"]["initScore"]["round"]
@@ -38,8 +40,10 @@ class ConvertLog:
 						log.append([win["who"],win["fromWho"],win["who"],str(win["ten"])+"点"])
 			who=obs["who"] if "who" in obs.keys() else 0
 			log[4+who*3] = [self.convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
-			count=0
-			for event in obs["publicObservation"]["events"]:
+			tumo_count=0
+			event_count=0
+			while event_count<len(obs["publicObservation"]["events"]):
+				event = obs["publicObservation"]["events"][event_count]
 				who_event = event["who"] if "who" in event.keys() else 0
 				if who == who_event:
 					if not "type" in event.keys():
@@ -49,8 +53,14 @@ class ConvertLog:
 						log[4+who*3+2].append(60)
 
 					elif event["type"] == "EVENT_TYPE_DRAW":
-						log[4+who*3+1].append(obs["privateObservation"]["events"][count])
-						count += 1
+						log[4+who*3+1].append(obs["privateObservation"]["drawHistory"][tumo_count])
+						tumo_count += 1
+
+					elif event["type"] == "EVENT_TYPE_RIICHI":
+						event_count+=1
+						next_event=obs["publicObservation"]["events"][event_count]
+						log[4+who*3+2].append('r'+str(self.convert_id(next_event["tile"])))
+
 
 					elif event["type"] == "EVENT_TYPE_CHI":
 						open = event["open"]
@@ -107,10 +117,22 @@ class ConvertLog:
 						open_tile.append(added_tile)
 						open_tile = [str(self.convert_id(id)) for id in open_tile]
 						open_tile.insert(3-mask_from,'k'+str(self.convert_id(stolen_tile)))
-						log[4+who*3+1].append(''.join(open_tile))
+						log[4+who*3+2].append(''.join(open_tile))
 
-			
+					elif event["type"]=="EVENT_TYPE_OPEN_KAN":
+						open = event["open"]
+						mask_from = open%3
+						kan_tile = open>>8
+						open_tile = list(range((kan_tile//4)*4,(kan_tile//4)*4+4))
+						stolen_tile = open_tile.pop(kan_tile%4)
+						open_tile = [str(self.convert_id(id)) for id in open_tile]
+						insert_pos = 3-mask_from if mask_from>=2 else 3
+						open_tile.insert(insert_pos,'m'+str(self.convert_id(stolen_tile)))
+						log[4+who*3+1].append(''.join(open_tile))
+				
+				event_count+=1						
+
 		self.logs["log"].append(log)
 	
 	def get_url(self):
-		return 1
+		return self.BASE_URL+json.dumps(self.logs)
