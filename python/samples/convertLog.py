@@ -1,5 +1,20 @@
+"""
+Todo:
+  - 包（パオ）などの特殊状況の処理
+  - 和了や流局時の表示の追加
+  - 点数と役名の表示の追加
+  - （暗槓時のaの位置と赤の処理について調べる）
+"""
 import json
 class ConvertLog:
+	"""
+	半荘分のログを天鳳の形式に変換し、URLを生成する。
+	add_log(self,obs_dict)
+		obs_dict:一局分のログのdict（全員分）
+		ログの追加（一局づつ）
+	get_url(self)
+		天鳳の配布URLを返す(str型)
+	"""
 	BASE_URL = "https://tenhou.net/5/#json="
 	def __init__(self):
 		self.logs = { "title":["",""], "name":["","","",""], "rule":{"disp":"","aka":1}, "log":[]}
@@ -29,7 +44,6 @@ class ConvertLog:
 				if "noWinner" in obs["roundTerminal"].keys():
 					log.append(["",obs["roundTerminal"]["noWinner"]["tenChanges"]])
 				else:
-					#todo:包の処理
 					for win in obs["roundTerminal"]["wins"]:
 						if "uraDoraIndicators" in win.keys():
 							log[3] = win["uraDoraIndicators"]
@@ -95,8 +109,6 @@ class ConvertLog:
 					elif event["type"]=="EVENT_TYPE_CLOSED_KAN":
 						open = event["open"] if "open" in event.keys() else 0
 						kan_tile = open>>8
-						# aを置く位置よく分からん（違うとバグる）
-						# 赤の位置も確認が必要
 						open_tile=[str(convert_id((kan_tile//4)*4+1)),
 		 						   str(convert_id((kan_tile//4)*4)),
 								   str(convert_id((kan_tile//4)*4+2)),
