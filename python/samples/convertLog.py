@@ -13,7 +13,7 @@ class ConvertLog:
 		obs_dict:一局分のログのdict（全員分）
 		ログの追加（一局づつ）
 	get_url(self)
-		天鳳の配布URLを返す(str型)
+		天鳳の牌譜URLを返す(str型)
 	"""
 	BASE_URL = "https://tenhou.net/5/#json="
 	def __init__(self):
