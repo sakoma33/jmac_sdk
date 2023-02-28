@@ -1,7 +1,6 @@
 """
 Todo:
   - 包（パオ）などの特殊状況の処理
-  - 和了や流局時の表示の追加
   - 点数と役名の表示の追加
   - （暗槓時のaの位置と赤の処理について調べる）
 """
@@ -42,15 +41,14 @@ class ConvertLog:
 					log[2].append(convert_id(dora))
 
 				if "noWinner" in obs["roundTerminal"].keys():
-					log.append(["",obs["roundTerminal"]["noWinner"]["tenChanges"]])
+					log.append(["流局",obs["roundTerminal"]["noWinner"]["tenChanges"]])
 				else:
 					for win in obs["roundTerminal"]["wins"]:
 						if "uraDoraIndicators" in win.keys():
 							log[3] = win["uraDoraIndicators"]
-						log.append(["",win["tenChanges"]])
 						who_win = win["who"] if "who" in win.keys() else 0
 						from_who_win = win["fromWho"] if "fromWho" in win.keys() else 0
-						log.append([who_win,from_who_win,who_win,str(win["ten"])])
+						log.append(["和了",win["tenChanges"],[who_win,from_who_win,who_win,str(win["ten"])+"点"]])
 			who=obs["who"] if "who" in obs.keys() else 0
 			log[4+who*3] = [convert_id(id) for id in obs["privateObservation"]["initHand"]["closedTiles"]]
 			tumo_count=0
@@ -149,4 +147,4 @@ class ConvertLog:
 		self.logs["log"].append(log)
 	
 	def get_url(self):
-		return self.BASE_URL+json.dumps(self.logs, separators=(',', ':'))
+		return self.BASE_URL+json.dumps(self.logs, separators=(',', ':'),ensure_ascii=False)

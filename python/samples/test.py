@@ -86,4 +86,4 @@ for _ in tqdm(range(N)):
     returns = env.rewards()
 
 env.state().save_svg("test.svg")
-print(urls[0])
+print(urls[-1])
