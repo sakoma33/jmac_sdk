@@ -13,6 +13,11 @@ def print_log(message):
 
 # 名前空間を設定するクラス
 class MyCustomNamespace(socketio.ClientNamespace):
+    def __init__(self, namespace=None, agent=None):
+        super().__init__(namespace)
+
+        self.agent = agent  # TODO: ここスッキリさせる
+
     def on_connect(self):
         print_log('connect')
 
@@ -29,6 +34,13 @@ class MyCustomNamespace(socketio.ClientNamespace):
     # jsonが送られてきたときの処理
     def on_receive_content(self, content):
         print_log('json response : {}'.format(content))
+
+    def on_ask_act(self, content):
+        print(content)
+        print(type(content))
+        obs = content  # TODO: 多分形式の変換が必要 json -> ??? or proto ->
+        decided_action = self.agent.act(obs)
+        return decided_action
 
 
 

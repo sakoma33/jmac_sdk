@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import eventlet
 import socketio
 from datetime import datetime
@@ -33,26 +35,25 @@ player_names_to_idx ={
 (roomにクライアントのsidを指定する.)
 '''
 
-def play(roomId, server):
+def play(roomId: int, server: SocketIOServer):
     """
     Args:
         roomId: int
         server: SocketIOServer
     """
     # プレイヤーの位置を決める (ランダム)
-    players = random.sample(cliets[roomId], len(cliets[roomId]))
+    players = random.sample(clients[roomId], len(clients[roomId]))
 
     # 卓の初期化
     env_ = envs[roomId]
     obs_dict = env_.reset()
 
-    while not env.done():
+    while not env_.done():
         actions = {}
         for player_id, obs in obs_dict.items():
             sid = players[player_names_to_idx[player_id]]
-            server.sio.emit('receive_content', obs_dict[player_id].to_proto(), room=sid, namespace='/test')
-            actions[player_id] = None  # TODO: ここに `sid` のクライアンドからの行動結果が入る`
-            obs_dict = env.step(actions)
+            actions[player_id] = server.sio.call('ask_act', obs[player_id].to_proto(), to=sid, namespace='/test')
+        obs_dict = env_.step(actions)
 
     # 対局終了時にログを保存
 
@@ -72,7 +73,8 @@ class MyCustomNamespace(socketio.Namespace):
         clients[roomId].append(sid)
         # 4人入ったら対局開始
         if (len(clients[roomId]) == 4):
-            env[roomId] = mjx.MjxEnv()
+            envs[roomId] = mjx.MjxEnv()
+            # play()  # TODO: ここでゲーム開始
 
         print_log('enter room: {}'.format(roomId))
 
@@ -112,7 +114,6 @@ class SocketIOServer:
         self.port = port
         self.path = path
         self.sio = socketio.Server(cors_allowed_origins='*') # CORSのエラーを無視する設定
-
 
     def start(self, roomId):
         self.sio.register_namespace(MyCustomNamespace(self.path)) # 名前空間を設定
