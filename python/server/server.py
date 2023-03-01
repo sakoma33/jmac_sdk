@@ -1,92 +1,217 @@
+from __future__ import annotations
+
+import threading
+import time
+import os
 import eventlet
 import socketio
 from datetime import datetime
 import json
+import random
 
-json_open = open('test.json', 'r')
-content = json.load(json_open)
+import mjx
 
-# 時間付きでの出力
-def print_log(message):
-    print('[{}] {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
+from server import convert_log
 
-# ルームごとに接続されているクライアントのリスト
-clients = {}
-
-'''
-ルームごとにjsonを送る: self.emit('response', msg, room=roomId)
-
-特定のクライアントにjsonを送る: self.emit('response', msg, room=clients[roomId][0])
-(roomにクライアントのsidを指定する.)
-'''
-
-# 名前空間を設定するクラス
-class MyCustomNamespace(socketio.Namespace):
-
-    # クライアントが接続したときに実行される関数
-    def on_connect(self, sid, environ):
-        print_log('connet sid : {}'.format(sid))
-        print_log('connet env : {}'.format(environ))
-
-    # クライアントを入室させる
-    def on_enter_room(self, sid, roomId):
-        self.enter_room(sid, roomId)
-        if roomId not in clients:
-            clients[roomId] = []
-        clients[roomId].append(sid)
-        print_log('enter room: {}'.format(roomId))
-
-    # 送信してきたクライアントだけにメッセージを送る関数
-    def on_sid_message(self, sid, msg):
-        self.emit('response', msg, room=sid)
-        print_log('emit sid : {}'.format(msg))
-
-    # 送信してきたクライアントを除く同じルームのクライアントにメッセージを送信する関数
-    def on_skip_sid_message(self, sid, data):
-        self.emit('response', data["content"], room=data["roomId"], skip_sid=sid)
-        print_log('emit skip sid : {}'.format(data["content"]))
-
-    # 同じルームのすべてのクライアントにメッセージを送る関数
-    def on_broadcast_message(self, sid, data):
-        self.emit('response', data["content"], room=data["roomId"])
-        print_log('emit all in {}: {}'.format(data["roomId"], data["content"]))
-
-    # jsonが送信されたときに、送信してきたクライアントを除く同じルームのクライアントにjsonを送信する関数
-    def on_send_json(self, sid, data):
-        self.emit('receive_content', data["content"], room=data["roomId"], skip_sid=sid)
-        print_log('emit skip sid : {}'.format(content))
-
-    # 送信してきたクライアントだけにjsonを送る関数
-    def on_receive_json(self, sid):
-        self.emit('receive_content', content, room=sid)
-        print_log('emit sid : {}'.format(content))
-
-    # クライアントとの接続が切れたときに実行される関数
-    def on_disconnect(self, sid):
-        print_log('disconnect')
 
 class SocketIOServer:
+    player_names_to_idx ={
+        "player_0": 0,
+        "player_1": 1,
+        "player_2": 2,
+        "player_3": 3,
+    }
 
-    def __init__(self, host, port, path):
-        self.host = host
-        self.port = port
-        self.path = path
-        self.sio = socketio.Server(cors_allowed_origins='*') # CORSのエラーを無視する設定
+    # namespaceの設定用クラス
+    class NamespaceClass(socketio.Namespace):
+        def on_connect(self, sid, environ):
+            pass
+        def on_disconnect(self, sid):
+            pass
+        def on_message(self, sid, data):
+            pass
+        def on_client_to_server(self, sid, data):
+            pass
+        def on_enter_room(self, sid, room_id):
+            pass
+    # 接続時に呼ばれるイベント
+    def on_connect(self, sid, environ):
+        # print('Connected to client (sid: %s, environ: %s)',\
+        #              str(sid), str(environ))
+        print("connect")
+        self.is_connect_ = True
+
+    # 切断時に呼ばれるイベント
+    def on_disconnect(self, sid):
+        # print('Disconnected from client (sid: %s)',str(sid))
+        print("disconnect")
+        self.is_connect_ = False
+
+    # サーバーからデータ送信(send)する
+    def send_data(self, data):
+        try:
+            self.sio_.send(data, namespace=self.namespace_)
+        except:
+            print('Has not connected to client')
+        else:
+            print('Send message %s (namespace="%s")',\
+                         str(data), self.namespace_)
+
+    # 独自定義のイベント名「server_to_client」で、サーバーからデータ送信(emit)する
+    def emit_data(self, data):
+        try:
+            self.sio_.emit('server_to_client', data, namespace=self.namespace_)
+        except:
+            print('Has not connected to client')
+        else:
+            print('Emit message %s (namespace="%s")',\
+                         str(data), self.namespace_)
+
+    def on_message(self, sid, data):
+        print('Received message %s', str(data))
+        self.send_data({'test_ack': 'send_from_server'})
+    # クライアントからイベント名「on_client_to_server」でデータがemitされた時に呼ばれる
+    def on_client_to_server(self, sid, data):
+        print('Received message %s', str(data))
+        self.emit_data({'test_ack': 'emit_from_server'})
+
+    def on_enter_room(self, sid, room_id):
+        """クライアントがルームに入った時の処理
+
+        Args:
+            sid (str): client sid
+            room_id (str): room id
+        """
+        self.Namespace.enter_room(sid, room_id)
+        if room_id not in self.clients.keys():
+            self.clients[room_id] = []
+        self.clients[room_id].append(sid)
+        if (len(self.clients[room_id]) == self.n_start_players):
+            self.envs[room_id] = mjx.MjxEnv()
+            self.play(room_id)  # TODO: バックグラウンド処理に流したい
+
+    def play(self, room_id):
+        """
+        Args:
+            roomId: int
+            server: SocketIOServer
+        """
+        print("game has started")
+        # プレイヤーの位置を決める (ランダム)
+        players = random.sample(self.clients[room_id], len(self.clients[room_id]))
+
+        # 卓の初期化
+        env_ = self.envs[room_id]
+        obs_dict = env_.reset()
+        logs = convert_log.ConvertLog()
+
+        while not env_.done():
+            actions = {}
+            for player_id, obs in obs_dict.items():
+                if self.is_solo:
+                    sid = players[0]
+                else:
+                    sid = players[self.player_names_to_idx[player_id]]
+
+                decided_action = self.Namespace.call('ask_act', obs.to_json(), to=sid, namespace='/test')
+                actions[player_id] = mjx.Action(decided_action)
+            obs_dict = env_.step(actions)
+            if len(obs_dict.keys())==4:
+                logs.add_log(obs_dict)
+        returns = env_.rewards()
+        if self.logging:
+            self.save_log(obs_dict, env_, logs)
+        print("game has ended")
+        self.clients.pop(room_id)
+        self.envs.pop(room_id)
+
+        # 対局終了時にログを保存
+
+    def save_log(self, obs_dict, env, logs):
+        logdir = "logs"
+        if not os.path.exists(logdir):
+            os.mkdir(logdir)
+
+        now = datetime.now().strftime('%Y%m%d%H%M%S')
+
+        os.mkdir(os.path.join(logdir, now))
+        for player_id, obs in obs_dict.items():
+            with open(os.path.join(logdir, now, f"{player_id}.json"), "w") as f:
+                json.dump(json.loads(obs.to_json()), f)
+            with open(os.path.join(logdir, now, f"tenho.log"), "w") as f:
+                f.write(logs.get_url())
+        env.state().save_svg(os.path.join(logdir, now, "finish.svg"))
+
+    # Namespaceクラス内の各イベントをオーバーライド
+    def overload_event(self):
+        self.Namespace.on_connect = self.on_connect
+        self.Namespace.on_disconnect = self.on_disconnect
+        self.Namespace.on_message = self.on_message
+        self.Namespace.on_client_to_server = self.on_client_to_server
+        self.Namespace.on_enter_room = self.on_enter_room
+    # 初期化
+    def __init__(self,ip,port,namespace,is_solo,logging=True):
+        self.ip_          = ip
+        self.port_        = port
+        self.namespace_   = namespace
+        self.is_connect_  = False
+        self.sio_         = socketio.Server(async_mode='eventlet')
+        self.app_         = socketio.WSGIApp(self.sio_)
+        self.Namespace    = self.NamespaceClass(self.namespace_)
+        self.logging = logging
+        self.is_solo = is_solo
+        self.n_start_players = 1 if is_solo else 4
+        self.overload_event()
+        self.sio_.register_namespace(self.Namespace)
+        self.clients = {}
+        self.envs = {}
+    # 接続確認
+    def isConnect(self):
+        return self.is_connect_
+    # 切断
+    def disconnect(self,sid):
+        try:
+            self.sio_.disconnect(sid,namespace=self.namespace_)
+        except:
+            print('Cannot disconnect from Client(sid="%s", namespace="%s")',\
+                          namespace=self.namespace_)
+        else:
+            self.is_connect_ = False
+    # 開始
+    def start(self):
+        try:
+            print('Start listening(%s:%d, namespace="%s")',\
+                         self.ip_,self.port_,self.namespace_)
+            eventlet.wsgi.server(eventlet.listen((self.ip_, self.port_)), self.app_)
+        except:
+            print('Cannot start listening(%s:%d, namespace="%s")',\
+                          self.ip_,self.port_,self.namespace_)
+    # メインの処理
+    def run(self):
+        p = threading.Thread(target=self.start)
+        p.setDaemon(True)
+        p.start()
+
+    def start(self):
+        app = socketio.WSGIApp(self.sio_) # wsgiサーバーミドルウェア生成
+        # self.sio_.start_background_task(self.actively_send_json, self.room_id) # バックグラウンドタスクの登録
+        eventlet.wsgi.server(eventlet.listen((self.ip_, self.port_)), app) # wsgiサーバー起動
 
 
-    def start(self, roomId):
-        self.sio.register_namespace(MyCustomNamespace(self.path)) # 名前空間を設定
-        app = socketio.WSGIApp(self.sio) # wsgiサーバーミドルウェア生成
-        self.sio.start_background_task(self.actively_send_json, roomId) # バックグラウンドタスクの登録
-        eventlet.wsgi.server(eventlet.listen((self.host, self.port)), app) # wsgiサーバー起動
-
-    # 能動的にjsonを送信する
-    def actively_send_json(self, roomId):
-        while(True):
-            self.sio.sleep(3)
-            print_log('emit json actively in {}'.format(roomId))
-            self.sio.emit('receive_content', content, room="123", namespace='/test')
 
 if __name__ == '__main__':
-    sio_server = SocketIOServer('localhost', 5000, '/test') # SocketIOClientクラスをインスタンス化
-    sio_server.start("123") # サーバーを起動する（引数はjsonを送信するルームID）
+    # Ctrl + C (SIGINT) で終了
+    # SocketIO Server インスタンスを生成
+    sio_server = SocketIOServer('localhost', 5000, '/test', logging=True, is_solo=False)
+    sio_server.start()
+    # SocketIO Server インスタンスを実行
+    # sio_server.run()
+    # 接続待ち
+    # while not sio_server.isConnect():
+    #     time.sleep(1)
+    # 切断待ち
+    # while sio_server.isConnect():
+    #     time.sleep(1)
+    # print('Finish')
+    # 終了
+    # exit()
