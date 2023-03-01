@@ -1,94 +1,172 @@
-import socketio
+from __future__ import annotations
+
+from typing import List
+import threading
 import time
+import eventlet
+import socketio
 from datetime import datetime
 import json
-import argparse
+import random
 
-json_open = open('test.json', 'r')
-content = json.load(json_open)
+import mjx
+from mjx import agents
 
-# 時間付きでの出力
-def print_log(message):
-    print('[{}] {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
 
-# 名前空間を設定するクラス
-class MyCustomNamespace(socketio.ClientNamespace):
-    def __init__(self, namespace=None, agent=None):
-        super().__init__(namespace)
-
-        self.agent = agent  # TODO: ここスッキリさせる
-
+# SocketIOのテンプレート
+class SocketIOClient:
+    # namespaceの設定用クラス
+    class NamespaceClass(socketio.ClientNamespace):
+        def on_connect(self):
+            pass
+        def on_disconnect(self):
+            pass
+        def on_message(self, data):
+            pass
+        def on_server_to_client(self, data):
+            pass
+        def on_ask_act(self, data):
+            pass
+    # 接続時に呼ばれるイベント
     def on_connect(self):
-        print_log('connect')
+        # print('Connected to server (%s:%d, namespace="%s", query="%s")',\
+        #              self.ip_,self.port_,self.namespace_,self.query_)
+        print("connect")
+        self.is_connect_ = True
 
+    # 切断時に呼ばれるイベント
     def on_disconnect(self):
-        print_log('disconnect')
+        print('Disconnected from server (%s:%d, namespace="%s", query="%s")',\
+                     self.ip_,self.port_,self.namespace_,self.query_)
+        self.is_connect_ = False
+    def on_message(self, data):
+        print('Received message %s', str(data))
+    # サーバーからイベント名「server_to_client」でデータがemitされた時に呼ばれる
+    def on_server_to_client(self, data):
+        print('Received message %s', str(data))
 
-    # def on_enter_room(self, room):
-    #     self.emit('send_roomid', room)
-    #     print_log('enter room:'+room)
+    def on_ask_act(self, data):
+        """サーバーから次の行動を決定する要求があったときに呼ばれる
 
-    def on_response(self, msg):
-        print_log('response : {}'.format(msg))
-
-    # jsonが送られてきたときの処理
-    def on_receive_content(self, content):
-        print_log('json response : {}'.format(content))
-
-    def on_ask_act(self, content):
-        print(content)
-        print(type(content))
-        obs = content  # TODO: 多分形式の変換が必要 json -> ??? or proto ->
-        decided_action = self.agent.act(obs)
+        Args:
+            data (???): 盤面情報
+        """
+        # data = json.loads(data)
+        data = mjx.Observation(data)
+        decided_action = self.agent.act(data).to_json()
         return decided_action
 
-
-
-
-class SocketIOClient:
-
-    def __init__(self, host, path, roomId):
-        self.host = host
-        self.path = path
-        self.sio = socketio.Client()
-        self.roomId = roomId
-
+    # Namespaceクラス内の各イベントをオーバーライド
+    def overload_event(self):
+        self.Namespace.on_connect          = self.on_connect
+        self.Namespace.on_disconnect       = self.on_disconnect
+        self.Namespace.on_message          = self.on_message
+        self.Namespace.on_server_to_client = self.on_server_to_client
+        self.Namespace.on_ask_act = self.on_ask_act
+    # 初期化
+    def __init__(self,ip,port,namespace,query,agent,room_id):
+        self.ip_         = ip
+        self.port_       = port
+        self.namespace_  = namespace
+        self.query_      = query
+        self.is_connect_ = False
+        self.sio_        = socketio.Client()
+        self.Namespace   = self.NamespaceClass(self.namespace_)
+        self.overload_event()
+        self.sio_.register_namespace(self.Namespace)
+        self.agent = agent
+        self.room_id = room_id
+    # 接続確認
+    def isConnect(self):
+        return self.is_connect_
+    # 接続
     def connect(self):
-        self.sio.register_namespace(MyCustomNamespace(self.path)) # 名前空間を設定
-        self.sio.connect(self.host) # サーバーに接続
-        self.sio.emit('enter_room', self.roomId, namespace = self.path) # ルームIDを指定して入室
-        self.sio.start_background_task(self.my_background_task, 123) # バックグラウンドタスクの登録 (123は引数の書き方の参考のため、処理には使っていない)
-        self.sio.wait() # イベントが待ち
-
-    def my_background_task(self, my_argument): # ここにバックグランド処理のコードを書く
+        # 接続先のURLとqueryの設定
+        url = 'ws://'+self.ip_+':'+str(self.port_)+'?query='+self.query_
+        print('Try to connect to server(%s:%d, namespace="%s", query="%s")',\
+                     self.ip_,self.port_,self.namespace_,self.query_)
+        try:
+            self.sio_.connect(url, namespaces=self.namespace_)
+        except:
+            print('Cannot connect to server(%s:%d, namespace="%s", query="%s")',\
+                          self.ip_,self.port_,self.namespace_,self.query_)
+        else:
+            if not self.is_connect_:
+                print('Namespace may be invalid.(namespace="%s")',\
+                              self.namespace_)
+    # 切断
+    def disconnect(self):
+        try:
+            self.sio_.disconnect()
+        except:
+            print('Cannot disconnect from server(%s:%d, namespace="%s", query="%s")',\
+                          self.ip_,self.port_,self.namespace_,self.query_)
+        else:
+            self.is_connect_ = False
+    # 再接続
+    def reconnect(self):
+        self.disconnect()
+        time.sleep(5)
+        self.connect()
+    # クライアントからデータ送信(send)する
+    def sendData(self, data):
+        try:
+            self.sio_.send(data, namespace=self.namespace_)
+        except:
+            print('Has not connected to server(%s:%d, namespace="%s", query="%s")',\
+                          self.ip_,self.port_,self.namespace_,self.query_)
+        else:
+            print('Send message %s (namespace="%s")', str(data), self.namespace_)
+    # 独自定義のイベント名「client_to_server」で、クライアントからデータ送信(emit)する
+    def emitData(self, data):
+        try:
+            self.sio_.emit('client_to_server', data, namespace=self.namespace_)
+        except:
+            print('Has not connected to server(%s:%d, namespace="%s", query="%s")',\
+                          self.ip_,self.port_,self.namespace_,self.query_)
+        else:
+            print('Emit message %s (namespace="%s")', \
+                         str(data), self.namespace_)
+    # メインの処理
+    def run(self):
         while True:
-            input_data = input("send data:") # ターミナルから入力された文字を取得
+            self.connect()
+            time.sleep(1)
+            if self.is_connect_:
+                break
+        p = threading.Thread(target=self.sio_.wait)
+        p.setDaemon(True)
+        p.start()
 
-            if input_data == 'send json':
-                # jsonを送信する
-                data = {
-                    "roomId": self.roomId,
-                    "content": content
-                }
-                self.sio.emit('send_json', data, namespace = self.path)
-            elif input_data == 'receive json':
-                # jsonを受信する
-                self.sio.emit('receive_json', namespace = self.path)
-            else:
-                # メッセージを送信する
-                data = {
-                    "roomId": self.roomId,
-                    "content": input_data
-                }
-                self.sio.emit('broadcast_message', data, namespace = self.path) # ターミナルで入力された文字をサーバーに送信
-            self.sio.sleep(1)
+    def enter_room(self):
+        self.sio_.emit('enter_room', self.room_id, namespace = self.namespace_, ) # ルームIDを指定して入室
+
+
+class RandomAgent(mjx.Agent):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def act(self, observation: mjx.Observation) -> mjx.Action:
+        legal_actions: List[mjx.Action] = observation.legal_actions()
+        return random.choice(legal_actions)
 
 if __name__ == '__main__':
-    # roomIDを取得
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--room', type=str)
-    args = parser.parse_args()
-    print_log(args.room)
-
-    sio_client = SocketIOClient('http://localhost:5000', '/test', args.room) # SocketIOClientクラスをインスタンス化
-    sio_client.connect()
+    # Ctrl + C (SIGINT) で終了
+    # signal.signal(signal.SIGINT, signal.SIG_DFL)
+    # SocketIO Client インスタンスを生成
+    agent = agents.ShantenAgent()
+    room_id = 123  # NOTE: DEBUG
+    sio_client = SocketIOClient('localhost', 5000, '/test', 'secret', agent, room_id)
+    # SocketIO Client インスタンスを実行
+    sio_client.run()
+    sio_client.enter_room()
+    # データを送信
+    # for i in range(10):
+    #     sio_client.sendData({'test_data': 'send_from_client'})
+    #     sio_client.emitData({'test_data': 'emit_from_client'})
+    #     time.sleep(1)
+    # 切断
+    # sio_client.disconnect()
+    # print('Finish')
+    # 終了
+    # exit()
