@@ -11,6 +11,8 @@ import random
 
 import mjx
 
+import convert_log
+
 
 class SocketIOServer:
     player_names_to_idx ={
@@ -101,6 +103,7 @@ class SocketIOServer:
         # 卓の初期化
         env_ = self.envs[room_id]
         obs_dict = env_.reset()
+        logs = convert_log.ConvertLog()
 
         while not env_.done():
             actions = {}
@@ -111,15 +114,18 @@ class SocketIOServer:
                 decided_action = self.Namespace.call('ask_act', obs.to_json(), to=sid, namespace='/test')
                 actions[player_id] = mjx.Action(decided_action)
             obs_dict = env_.step(actions)
+            if len(obs_dict.keys())==4:
+                logs.add_log(obs_dict)
         returns = env_.rewards()
-        self.save_log(obs_dict, env_)
+        if self.logging:
+            self.save_log(obs_dict, env_, logs)
         print("done")
         self.clients.pop(room_id)
         self.envs.pop(room_id)
 
         # 対局終了時にログを保存
 
-    def save_log(self, obs_dict, env):
+    def save_log(self, obs_dict, env, logs):
         logdir = "logs"
         if not os.path.exists(logdir):
             os.mkdir(logdir)
@@ -130,6 +136,8 @@ class SocketIOServer:
         for player_id, obs in obs_dict.items():
             with open(os.path.join(logdir, now, f"{player_id}.json"), "w") as f:
                 json.dump(json.loads(obs.to_json()), f)
+            with open(os.path.join(logdir, now, f"tenho.log"), "w") as f:
+                f.write(logs.get_url())
         env.state().save_svg(os.path.join(logdir, now, "finish.svg"))
 
     # Namespaceクラス内の各イベントをオーバーライド
@@ -140,7 +148,7 @@ class SocketIOServer:
         self.Namespace.on_client_to_server = self.on_client_to_server
         self.Namespace.on_enter_room = self.on_enter_room
     # 初期化
-    def __init__(self,ip,port,namespace):
+    def __init__(self,ip,port,namespace,logging=True):
         self.ip_          = ip
         self.port_        = port
         self.namespace_   = namespace
@@ -148,6 +156,7 @@ class SocketIOServer:
         self.sio_         = socketio.Server(async_mode='eventlet')
         self.app_         = socketio.WSGIApp(self.sio_)
         self.Namespace    = self.NamespaceClass(self.namespace_)
+        self.logging = logging
         self.overload_event()
         self.sio_.register_namespace(self.Namespace)
         self.clients = {}
@@ -189,7 +198,7 @@ class SocketIOServer:
 if __name__ == '__main__':
     # Ctrl + C (SIGINT) で終了
     # SocketIO Server インスタンスを生成
-    sio_server = SocketIOServer('localhost', 5000, '/test')
+    sio_server = SocketIOServer('localhost', 5000, '/test', logging=True)
     sio_server.start()
     # SocketIO Server インスタンスを実行
     # sio_server.run()
