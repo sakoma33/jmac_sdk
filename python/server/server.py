@@ -11,7 +11,7 @@ import random
 
 import mjx
 
-import convert_log
+from server import convert_log
 
 
 class SocketIOServer:
@@ -96,6 +96,7 @@ class SocketIOServer:
             roomId: int
             server: SocketIOServer
         """
+        print("game has started")
         # プレイヤーの位置を決める (ランダム)
         players = random.sample(self.clients[room_id], len(self.clients[room_id]))
 
@@ -120,7 +121,7 @@ class SocketIOServer:
         returns = env_.rewards()
         if self.logging:
             self.save_log(obs_dict, env_, logs)
-        print("done")
+        print("game has ended")
         self.clients.pop(room_id)
         self.envs.pop(room_id)
 

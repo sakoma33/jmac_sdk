@@ -5,7 +5,7 @@ import mjx
 
 class CustomAgentBase(mjx.Agent):
     def __init__(self):
-        super.__init__()
+        super().__init__()
 
     @abstractmethod
     def custom_act(self, obs: mjx.Observation) -> mjx.Action:
