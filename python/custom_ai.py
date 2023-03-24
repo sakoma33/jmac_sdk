@@ -137,6 +137,34 @@ class Net(TrainNet, ValidationNet, TestNet):
         return optimizer
 
 
+# 学習データ、検証データ、テストデータへの処理を継承したクラス
+class Net2(TrainNet, ValidationNet, TestNet):
+
+    def __init__(self, input_size=544, hidden_size=544, output_size=181, batch_size=100):
+        super(Net2, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, 362)
+        self.fc3 = nn.Linear(362, output_size)
+        self.batch_size = batch_size
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
+        return x
+
+    # New: 平均ニ乗誤差
+    def lossfun(self, y, t):
+        return F.mse_loss(y, t)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        # return torch.optim.SGD(self.parameters(), lr=0.1)
+        return optimizer
+
+
 if __name__ == "__main__":
     # make_dataset()
     dataset = np.load("dataset/small-1300.npy")
@@ -163,7 +191,7 @@ if __name__ == "__main__":
     torch.manual_seed(0)
 
     # インスタンス化
-    net = Net()
+    net = Net2()
     trainer = Trainer(max_epochs=30)
 
     # 学習の実行

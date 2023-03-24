@@ -12,7 +12,7 @@ import mjx
 import mjx.agents
 import torch
 from client.agent import CustomAgentBase
-from custom_ai import Net
+from custom_ai import Net, Net2
 from mjx.const import ActionType
 from server import convert_log
 from torch import Tensor, nn, optim, utils
@@ -25,8 +25,8 @@ class MyAgent(CustomAgentBase):
     def __init__(self):
         super().__init__()
         # self.model = torch.load('models/second_model.pth')
-        self.model = Net()
-        self.model.load_state_dict(torch.load("models/third_model.pth"))
+        self.model = Net2()
+        self.model.load_state_dict(torch.load("models/fifth_model.pth"))
 
     def custom_act(self, obs: mjx.Observation) -> mjx.Action:
         """盤面情報と取れる行動を受け取って，行動を決定して返す関数．参加者が各自で実装．
