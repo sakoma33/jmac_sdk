@@ -10,9 +10,12 @@ from datetime import datetime
 import custom_evaluate
 import mjx
 import mjx.agents
+import torch
 from client.agent import CustomAgentBase
+from custom_ai import Net
 from mjx.const import ActionType
 from server import convert_log
+from torch import Tensor, nn, optim, utils
 
 # CustomAgentBase を継承して，
 # custom_act()を編集して麻雀AIを実装してください．
@@ -21,6 +24,7 @@ from server import convert_log
 class MyAgent(CustomAgentBase):
     def __init__(self):
         super().__init__()
+        self.model = torch.load('models/first_model.pth')
 
     def custom_act(self, obs: mjx.Observation) -> mjx.Action:
         """盤面情報と取れる行動を受け取って，行動を決定して返す関数．参加者が各自で実装．
@@ -56,42 +60,42 @@ class MyAgent(CustomAgentBase):
         #     return obs.legal_actions()[action_index]
 
         # return_action = find_action(175)
-        legal_actions = obs.legal_actions()
-        legal_actions_idx = [element.to_idx() for element in obs.legal_actions()]
-        print(obs.action_mask())
-        print(legal_actions_idx)
+        # legal_actions = obs.legal_actions()
+        # legal_actions_idx = [element.to_idx() for element in obs.legal_actions()]
+        # print(obs.action_mask())
+        # print(legal_actions_idx)
 
-        if 175 in legal_actions_idx:  # Tsumo
-            action_index = legal_actions_idx.index(175)
-            print("ツモ")
-            print(obs.legal_actions()[action_index].type())
-            return obs.legal_actions()[action_index]
-        elif 176 in legal_actions_idx:  # Ron
-            action_index = legal_actions_idx.index(176)
-            print("ロン")
-            print(obs.legal_actions()[action_index].type())
-            return obs.legal_actions()[action_index]
-        elif 177 in legal_actions_idx:  # Riichi
-            action_index = legal_actions_idx.index(177)
-            print("リーチ")
-            print(obs.legal_actions()[action_index].type())
-            return obs.legal_actions()[action_index]
-        elif not set(legal_actions_idx).isdisjoint(set(range(74, 175))):
-            legal_actions = [element for element in legal_actions if element.to_idx() not in range(74, 175)]
-            return_action = random.choice(legal_actions)
-            # print("除外")
-            # print(return_action.type())
-            return return_action
-        elif not set(legal_actions_idx).isdisjoint(set(range(0, 74))):
-            legal_actions = [element for element in legal_actions if element.to_idx() in range(0, 74)]
-            effective_discard_types = obs.curr_hand().effective_discard_types()
-            effective_discards = [
-                a for a in legal_actions if a.tile().type() in effective_discard_types
-            ]
-            return_action = random.choice(effective_discards)
-            # print("除外")
-            # print(return_action.type())
-            return return_action
+        # if 175 in legal_actions_idx:  # Tsumo
+        #     action_index = legal_actions_idx.index(175)
+        #     print("ツモ")
+        #     print(obs.legal_actions()[action_index].type())
+        #     return obs.legal_actions()[action_index]
+        # elif 176 in legal_actions_idx:  # Ron
+        #     action_index = legal_actions_idx.index(176)
+        #     print("ロン")
+        #     print(obs.legal_actions()[action_index].type())
+        #     return obs.legal_actions()[action_index]
+        # elif 177 in legal_actions_idx:  # Riichi
+        #     action_index = legal_actions_idx.index(177)
+        #     print("リーチ")
+        #     print(obs.legal_actions()[action_index].type())
+        #     return obs.legal_actions()[action_index]
+        # elif not set(legal_actions_idx).isdisjoint(set(range(74, 175))):
+        #     legal_actions = [element for element in legal_actions if element.to_idx() not in range(74, 175)]
+        #     return_action = random.choice(legal_actions)
+        #     # print("除外")
+        #     # print(return_action.type())
+        #     return return_action
+        # elif not set(legal_actions_idx).isdisjoint(set(range(0, 74))):
+        #     legal_actions = [element for element in legal_actions if element.to_idx() in range(0, 74)]
+        #     effective_discard_types = obs.curr_hand().effective_discard_types()
+        #     effective_discards = [
+        #         a for a in legal_actions if a.tile().type() in effective_discard_types
+        #     ]
+        #     return_action = random.choice(effective_discards)
+        #     # print("除外")
+        #     # print(return_action.type())
+        #     return return_action
 
         # print(obs.legal_actions()[0].to_json())
         # print(obs.legal_actions())
@@ -150,6 +154,25 @@ class MyAgent(CustomAgentBase):
 
         # # if no effective tile exists, discard randomly
         # return random.choice(legal_discards)
+
+        legal_actions = obs.legal_actions()
+        if len(legal_actions) == 1:
+            return legal_actions[0]
+
+        # 予測
+        # feature = obs.to_features(feature_name="mjx-small-v0")
+        feature = obs.to_features(feature_name="mjx-large-v0")
+        self.model.eval()
+        with torch.no_grad():
+            action_logit = self.model(Tensor(feature.ravel()))
+        action_proba = torch.sigmoid(action_logit).numpy()
+        # print(action_logit)
+
+        # アクション決定
+        mask = obs.action_mask()
+        action_idx = (mask * action_proba).argmax()
+        return mjx.Action.select_from(action_idx, legal_actions)
+
         # ランダムに取れる行動をする
         return random.choice(obs.legal_actions())
 
@@ -228,17 +251,17 @@ if __name__ == "__main__":
     if logging:
         custom_evaluate.evaluate_from_arg(dir_paths)
 
-    from mjx import Action, Observation, State
-    data_path = "json"
-    with open(data_path) as f:
-        lines = f.readlines()
+    # from mjx import Action, Observation, State
+    # data_path = "json"
+    # with open(data_path) as f:
+    #     lines = f.readlines()
 
-    for line in lines:
-        state = State(line)
+    # for line in lines:
+    #     state = State(line)
 
-        for cpp_obs, cpp_act in state._cpp_obj.past_decisions():
-            obs = Observation._from_cpp_obj(cpp_obs)
-            feature = obs.to_features(feature_name="mjx-small-v0")
+    #     for cpp_obs, cpp_act in state._cpp_obj.past_decisions():
+    #         obs = Observation._from_cpp_obj(cpp_obs)
+    #         feature = obs.to_features(feature_name="mjx-small-v0")
 
-            action = Action._from_cpp_obj(cpp_act)
-            action_idx = action.to_idx()
+    #         action = Action._from_cpp_obj(cpp_act)
+    #         action_idx = action.to_idx()
