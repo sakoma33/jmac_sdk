@@ -24,7 +24,9 @@ from torch import Tensor, nn, optim, utils
 class MyAgent(CustomAgentBase):
     def __init__(self):
         super().__init__()
-        self.model = torch.load('models/first_model.pth')
+        # self.model = torch.load('models/second_model.pth')
+        self.model = Net()
+        self.model.load_state_dict(torch.load("models/third_model.pth"))
 
     def custom_act(self, obs: mjx.Observation) -> mjx.Action:
         """盤面情報と取れる行動を受け取って，行動を決定して返す関数．参加者が各自で実装．
@@ -160,8 +162,8 @@ class MyAgent(CustomAgentBase):
             return legal_actions[0]
 
         # 予測
-        # feature = obs.to_features(feature_name="mjx-small-v0")
-        feature = obs.to_features(feature_name="mjx-large-v0")
+        feature = obs.to_features(feature_name="mjx-small-v0")
+        # feature = obs.to_features(feature_name="mjx-large-v0")
         self.model.eval()
         with torch.no_grad():
             action_logit = self.model(Tensor(feature.ravel()))
